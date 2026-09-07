@@ -1,6 +1,8 @@
 package bootstrap
 
 import (
+	"os"
+
 	"github.com/Bastien-Antigravity/universal-logger/src/config"
 	"github.com/Bastien-Antigravity/universal-logger/src/interfaces"
 	"github.com/Bastien-Antigravity/universal-logger/src/logger"
@@ -118,3 +120,24 @@ func InitWithOptions(opts BootstrapOptions) (*config.DistConfig, interfaces.Logg
 
 	return distConfig, unilog
 }
+
+// InitService provides a zero-config, 1-line entrypoint for ecosystem microservices.
+// It auto-detects whether the service is running in Docker (DOCKER_ENV=true) or Native local host,
+// selecting the appropriate config and logger profiles automatically.
+func InitService(serviceName string) (*config.DistConfig, interfaces.Logger) {
+	configProfile := "standalone"
+	loggerProfile := "standard"
+
+	if os.Getenv("DOCKER_ENV") == "true" || os.Getenv("CONTAINER") == "true" {
+		configProfile = "production"
+		loggerProfile = "cloud"
+	}
+
+	logLevel := os.Getenv("LOG_LEVEL")
+	if logLevel == "" {
+		logLevel = "INFO"
+	}
+
+	return Init(serviceName, configProfile, loggerProfile, logLevel, true, nil)
+}
+
